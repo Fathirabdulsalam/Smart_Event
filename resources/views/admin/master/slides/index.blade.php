@@ -1,0 +1,269 @@
+@extends('layouts.admin')
+
+@section('content')
+    <div class="space-y-6">
+        
+        <!-- Notifikasi -->
+        @if(session('success') && !str_contains(session('success'), 'dihapus'))
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
+        @endif
+
+        @if($errors->any())
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                <ul class="list-disc pl-5 text-xs">
+                    @foreach($errors->all() as $error) <li>{{ $error }}</li> @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <!-- Toolbar -->
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-gray-800">Master Slides (Banner)</h2>
+            <button onclick="openCreateModal()" class="flex items-center gap-2 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-sm font-medium px-5 py-2.5 rounded-lg transition shadow-md">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Add Slide
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <tr>
+                        <th class="py-4 px-6">Image</th>
+                        <th class="py-4 px-4">Title & Link</th>
+                        <th class="py-4 px-4">Description</th>
+                        <th class="py-4 px-4 text-center">Order</th>
+                        <th class="py-4 px-4 text-center">Status</th>
+                        <th class="py-4 px-6 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($slides as $slide)
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="py-4 px-6">
+                            <img src="{{ Storage::url($slide->image_path) }}" class="h-16 w-24 object-cover rounded-lg border border-gray-200">
+                        </td>
+                        <td class="py-4 px-4">
+                            <div class="font-bold text-gray-800">{{ $slide->title }}</div>
+                            <div class="text-xs text-gray-500 truncate max-w-xs">{{ $slide->link_url ?? '-' }}</div>
+                        </td>
+                        <!-- Kolom Description -->
+                        <td class="py-4 px-4 text-sm text-gray-600 truncate max-w-xs" title="{{ $slide->description }}">
+                            {{ Str::limit($slide->description, 50) ?? '-' }}
+                        </td>
+                        <td class="py-4 px-4 text-center font-bold">{{ $slide->order }}</td>
+                        <td class="py-4 px-4 text-center">
+                            <span class="px-2 py-1 rounded text-xs font-bold {{ $slide->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                {{ $slide->is_active ? 'Active' : 'Inactive' }}
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <button onclick="openEditModal(
+                                    '{{ $slide->id }}', 
+                                    '{{ addslashes($slide->title) }}', 
+                                    '{{ addslashes($slide->description) }}', 
+                                    '{{ $slide->link_url }}', 
+                                    '{{ $slide->order }}', 
+                                    '{{ $slide->is_active }}',
+                                    '{{ Storage::url($slide->image_path) }}'
+                                )" class="flex items-center gap-1 px-3 py-1.5 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-medium rounded-md transition shadow-sm">
+                                    Edit
+                                </button>
+                                <button onclick="openDeleteModal('{{ $slide->id }}')" class="flex items-center gap-1 px-3 py-1.5 bg-red-500 hover:bg-red-700 text-white text-xs font-medium rounded-md transition shadow-sm">
+                                    Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="6" class="text-center py-8 text-gray-500">No slides found.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-4">{{ $slides->links() }}</div>
+    </div>
+
+    <!-- CREATE MODAL -->
+    <div id="createModal" class="relative z-50 hidden" role="dialog" aria-modal="true"><div class="fixed inset-0 backdrop-brightness-50 backdrop-blur-sm transition-opacity"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
+            <div class="relative transform rounded-xl bg-white text-left shadow-xl transition-all sm:w-full sm:max-w-lg border border-gray-200">
+                <div class="bg-white px-6 py-6">
+                    <h3 class="text-lg font-bold text-[#6C5DD3] mb-4 border-b pb-2">Add New Slide</h3>
+                    <form action="{{ route('master.slides.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                        @csrf
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                            <input type="text" name="title" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <textarea name="description" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Target URL (Optional)</label>
+                            <input type="url" name="link_url" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition" placeholder="https://...">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+                                <input type="number" name="order" value="0" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select name="is_active" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition">
+                                    <option value="1">Active</option>
+                                    <option value="0">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Banner Image (1920x600 px)</label>
+                            <input type="file" name="image" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition" accept="image/*" required>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-6">
+                            <button type="button" onclick="closeModal('createModal')" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-[#6C5DD3] text-white rounded-lg hover:bg-[#5b4ec2] transition shadow-md">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT MODAL (WITH PREVIEW) -->
+    <div id="editModal" class="relative z-50 hidden" role="dialog" aria-modal="true"><div class="fixed inset-0 backdrop-brightness-50 backdrop-blur-sm transition-opacity"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
+            <div class="relative transform rounded-xl bg-white text-left shadow-xl transition-all sm:w-full sm:max-w-lg border border-gray-200">
+                <div class="bg-white px-6 py-6">
+                    <h3 class="text-lg font-bold text-[#6C5DD3] mb-4 border-b pb-2">Edit Slide</h3>
+                    <form id="editForm" method="POST" enctype="multipart/form-data" class="space-y-4">
+                        @csrf @method('PUT')
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                            <input type="text" name="title" id="edit_title" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <textarea name="description" id="edit_description" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Target URL</label>
+                            <input type="url" name="link_url" id="edit_link" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+                                <input type="number" name="order" id="edit_order" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select name="is_active" id="edit_status" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition">
+                                    <option value="1">Active</option>
+                                    <option value="0">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Current Image</label>
+                            <!-- Preview Image Area -->
+                            <div class="mb-2">
+                                <img id="edit_preview" src="" class="w-full h-32 object-cover rounded-lg border border-gray-200 bg-gray-50">
+                            </div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Replace Image (Optional)</label>
+                            <input type="file" name="image" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition" accept="image/*">
+                        </div>
+                        <div class="flex justify-end gap-2 mt-6">
+                            <button type="button" onclick="closeModal('editModal')" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-[#6C5DD3] text-white rounded-lg hover:bg-[#5b4ec2] transition shadow-md">Update</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE MODAL -->
+    <div id="deleteModal" class="relative z-50 hidden" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 backdrop-brightness-50 backdrop-blur-sm transition-opacity"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
+            <div class="relative transform rounded-xl bg-white text-left shadow-2xl transition-all sm:w-full sm:max-w-md p-6 border border-gray-200">
+                <div class="text-center mt-2">
+                    <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-[#FFCE50] mb-5">
+                        <svg class="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-[#6C5DD3] leading-snug px-4">Delete This Slide?</h3>
+                    <p class="text-sm text-[#6C5DD3] opacity-80 mt-2 mb-6">This action cannot be undone.</p>
+                    <div class="flex items-center justify-center gap-4 mt-6">
+                        <button onclick="closeModal('deleteModal')" class="w-32 inline-flex justify-center rounded-lg border border-transparent px-4 py-2 bg-[#6C5DD3] text-base font-medium text-white hover:bg-[#5b4ec2] transition">Cancel</button>
+                        <form id="deleteForm" method="POST">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="w-32 inline-flex justify-center rounded-lg border border-transparent px-4 py-2 bg-[#6C5DD3] text-base font-medium text-white hover:bg-[#5b4ec2] transition">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div id="successModal" class="relative z-50 hidden" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 backdrop-brightness-50 backdrop-blur-sm transition-opacity"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
+            <div class="relative transform rounded-xl bg-white text-left shadow-2xl transition-all sm:w-full sm:max-w-sm p-8 border border-gray-200">
+                <div class="text-center">
+                    <div class="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[#00C851] mb-6 shadow-md">
+                        <svg class="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-[#6C5DD3] mb-2">Success!</h3>
+                </div>
+                <div class="mt-8">
+                    <button onclick="closeModal('successModal')" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-[#6C5DD3] text-base font-medium text-white hover:bg-[#5b4ec2] transition">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script>
+        function openCreateModal() { document.getElementById('createModal').classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        
+        function openEditModal(id, title, description, link, order, status, imageUrl) {
+            document.getElementById('edit_title').value = title;
+            document.getElementById('edit_description').value = description;
+            document.getElementById('edit_link').value = link;
+            document.getElementById('edit_order').value = order;
+            document.getElementById('edit_status').value = status;
+            
+            // Set Preview Image
+            const imgPreview = document.getElementById('edit_preview');
+            imgPreview.src = imageUrl;
+
+            document.getElementById('editForm').action = '/admin/dashboard/master/slides/' + id;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function openDeleteModal(id) {
+            document.getElementById('deleteForm').action = '/admin/dashboard/master/slides/' + id;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                document.querySelectorAll('[role="dialog"]').forEach(modal => modal.classList.add('hidden'));
+            }
+        });
+
+        @if($errors->any() && !request()->isMethod('put'))
+            openCreateModal();
+        @endif
+
+        @if(session('success') && str_contains(session('success'), 'dihapus'))
+            document.getElementById('successModal').classList.remove('hidden');
+        @endif
+    </script>
+    @endpush
+@endsection
