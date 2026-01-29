@@ -47,11 +47,11 @@
                         <tr class="text-gray-400 text-xs border-b border-gray-100">
                             <th class="py-4 pl-6 pr-4 w-10">#</th>
                             <th class="py-4 px-4 font-normal">Banner Preview</th> <!-- Kolom Baru -->
-                            <th class="py-4 px-4 font-normal">Event Name</th>
-                            <th class="py-4 px-4 font-normal">Start Date</th>
-                            <th class="py-4 px-4 font-normal">End Date</th>
+                            <th class="py-4 px-4 font-normal">Nama Event</th>
+                            <th class="py-4 px-4 font-normal">Tanggal Mulai</th>
+                            <th class="py-4 px-4 font-normal">Tanggal Selesai</th>
                             <th class="py-4 px-4 font-normal">Status</th>
-                            <th class="py-4 px-6 text-right font-normal">Action</th>
+                            <th class="py-4 px-6 text-right font-normal">Tindakan</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">

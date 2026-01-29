@@ -14,7 +14,7 @@
             <h2 class="text-xl font-bold text-gray-800">Master Jenis Event</h2>
             <button onclick="openModal('createModal')" class="flex items-center gap-2 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-sm font-medium px-5 py-2.5 rounded-lg transition shadow-md">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Add Kind
+                Tambahakan Master
             </button>
         </div>
 
@@ -24,8 +24,8 @@
                 <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
                     <tr>
                         <th class="py-4 px-6 w-10">#</th>
-                        <th class="py-4 px-4">Kind Name</th>
-                        <th class="py-4 px-6 text-right">Action</th>
+                        <th class="py-4 px-4">Nama Master</th>
+                        <th class="py-4 px-6 text-right">Tindakan</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -39,13 +39,13 @@
                                     Edit
                                 </button>
                                 <button onclick="openDeleteModal('{{ $kind->id }}')" class="flex items-center gap-1 px-3 py-1.5 bg-red-500 hover:bg-red-700 text-white text-xs font-medium rounded-md transition shadow-sm">
-                                    Delete
+                                    Hapus
                                 </button>
                             </div>
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="3" class="text-center py-8 text-gray-500">No event kinds found.</td></tr>
+                    <tr><td colspan="3" class="text-center py-8 text-gray-500">Tidak ada master yang ditemukan.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -61,16 +61,16 @@
         <div class="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
             <div class="relative transform rounded-xl bg-white text-left shadow-xl transition-all sm:w-full sm:max-w-md border border-gray-200">
                 <div class="bg-white px-6 py-6">
-                    <h3 class="text-lg font-bold text-[#6C5DD3] mb-4 border-b pb-2">Add Event Kind</h3>
+                    <h3 class="text-lg font-bold text-[#6C5DD3] mb-4 border-b pb-2">Tambah Master Event</h3>
                     <form action="{{ route('master.event-kinds.store') }}" method="POST">
                         @csrf
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama</label>
                             <input type="text" name="name" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition" placeholder="e.g. Workshop" required>
                         </div>
                         <div class="flex justify-end gap-2">
-                            <button type="button" onclick="closeModal('createModal')" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition">Cancel</button>
-                            <button type="submit" class="px-4 py-2 bg-[#6C5DD3] text-white rounded-lg hover:bg-[#5b4ec2] transition shadow-md">Save</button>
+                            <button type="button" onclick="closeModal('createModal')" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition">Batal</button>
+                            <button type="submit" class="px-4 py-2 bg-[#6C5DD3] text-white rounded-lg hover:bg-[#5b4ec2] transition shadow-md">Simpan</button>
                         </div>
                     </form>
                 </div>
@@ -86,16 +86,16 @@
         <div class="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
             <div class="relative transform rounded-xl bg-white text-left shadow-xl transition-all sm:w-full sm:max-w-md border border-gray-200">
                 <div class="bg-white px-6 py-6">
-                    <h3 class="text-lg font-bold text-[#6C5DD3] mb-4 border-b pb-2">Edit Event Kind</h3>
+                    <h3 class="text-lg font-bold text-[#6C5DD3] mb-4 border-b pb-2">Edit Master Event</h3>
                     <form id="editForm" method="POST">
                         @csrf @method('PUT')
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama</label>
                             <input type="text" name="name" id="edit_name" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition" required>
                         </div>
                         <div class="flex justify-end gap-2">
-                            <button type="button" onclick="closeModal('editModal')" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition">Cancel</button>
-                            <button type="submit" class="px-4 py-2 bg-[#6C5DD3] text-white rounded-lg hover:bg-[#5b4ec2] transition shadow-md">Update</button>
+                            <button type="button" onclick="closeModal('editModal')" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition">Batal</button>
+                            <button type="submit" class="px-4 py-2 bg-[#6C5DD3] text-white rounded-lg hover:bg-[#5b4ec2] transition shadow-md">Simpan</button>
                         </div>
                     </form>
                 </div>
@@ -115,8 +115,8 @@
                     <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-[#FFCE50] mb-5">
                         <svg class="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     </div>
-                    <h3 class="text-xl font-bold text-[#6C5DD3] leading-snug px-4">Delete This Data?</h3>
-                    <p class="text-sm text-[#6C5DD3] opacity-80 mt-2 mb-6">This action cannot be undone.</p>
+                    <h3 class="text-xl font-bold text-[#6C5DD3] leading-snug px-4">Hapus Data Ini?</h3>
+                    <p class="text-sm text-[#6C5DD3] opacity-80 mt-2 mb-6">Tindakan ini tidak dapat dibatalkan.</p>
                     <div class="flex items-center justify-center gap-4 mt-6">
                         <button onclick="closeModal('deleteModal')" class="w-32 inline-flex justify-center rounded-lg border border-transparent px-4 py-2 bg-[#6C5DD3] text-base font-medium text-white hover:bg-[#5b4ec2] transition">Cancel</button>
                         <form id="deleteForm" method="POST">
@@ -142,7 +142,7 @@
                             <svg class="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
                         </div>
                     </div>
-                    <h3 class="text-2xl font-bold text-[#6C5DD3] mb-2">Success!</h3>
+                    <h3 class="text-2xl font-bold text-[#6C5DD3] mb-2">Sukses!</h3>
                 </div>
                 <div class="mt-8">
                     <button onclick="closeModal('successModal')" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-[#6C5DD3] text-base font-medium text-white hover:bg-[#5b4ec2] transition">OK</button>

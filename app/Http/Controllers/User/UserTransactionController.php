@@ -11,12 +11,10 @@ class UserTransactionController extends Controller
 {
     public function index()
     {
-        // Ambil transaksi dimana registration milik user yang sedang login
-        $transactions = Transaction::whereHas('registration', function($q) {
-                $q->where('user_id', Auth::id());
-            })
-            ->with(['registration.event']) // Eager load event info
-            ->latest() // Urutkan terbaru
+        // Ambil transaksi langsung berdasarkan user_id
+        $transactions = Transaction::with(['event', 'ticket'])
+            ->where('user_id', Auth::id())
+            ->latest()
             ->paginate(10);
 
         return view('users.transactions.index', compact('transactions'));

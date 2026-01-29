@@ -41,6 +41,17 @@ class Event extends Model
         'master_ticket_category_id',
         'master_subcategory_id',
         'master_location_id',
+
+        // 🔹 TAMBAHAN BARU: Deskripsi, Ketentuan, Kontak, Periode Penjualan
+        'description',
+        'terms',
+        'contact_name',
+        'contact_email',
+        'contact_phone',
+        'sale_start_date',
+        'sale_end_date',
+        'sale_start_time',
+        'sale_end_time',
     ];
 
     protected $casts = [
@@ -48,6 +59,10 @@ class Event extends Model
         'end_date' => 'date',
         'start_time' => 'datetime:H:i',
         'end_time' => 'datetime:H:i',
+        'sale_start_date' => 'date',
+        'sale_end_date' => 'date',
+        'sale_start_time' => 'datetime:H:i',
+        'sale_end_time' => 'datetime:H:i',
     ];
 
     /* =====================
@@ -110,5 +125,11 @@ class Event extends Model
     public function location()
     {
         return $this->belongsTo(MasterLocation::class, 'master_location_id');
+    }
+
+    // 🔹 TAMBAHAN BARU: Relasi ke Tiket
+    public function tickets()
+    {
+        return $this->hasMany(EventTicket::class, 'event_id');
     }
 }

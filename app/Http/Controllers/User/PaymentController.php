@@ -3,299 +3,175 @@
 namespace App\Http\Controllers\User;
 
 use App\Models\Event;
-use Xendit\Configuration;
 use App\Models\Transaction;
-use Illuminate\Support\Str;
-use App\Models\Registration;
+use App\Services\PayLabsService;
 use Illuminate\Http\Request;
-use Xendit\Invoice\InvoiceApi;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use App\Services\PaylabsService; 
 
 class PaymentController extends Controller
 {
-    public function __construct()
+    protected $payLabs;
+
+    public function __construct(PayLabsService $payLabs)
     {
-        Configuration::setXenditKey(env('XENDIT_SECRET_KEY'));
+        $this->payLabs = $payLabs;
     }
 
     /**
-     * 1. PROSES CHECKOUT (Saat user klik Beli Tiket)
+     * Proses Checkout (PayLabs)
      */
     public function checkout(Request $request, $eventId)
     {
-        $event = Event::findOrFail($eventId);
+        $event = Event::with('tickets')->findOrFail($eventId);
         $user = Auth::user();
 
-        // Cek apakah user sudah daftar di event ini (biar ga double)
-        $existing = Registration::where('user_id', $user->id)
-            ->where('event_id', $event->id)
-            ->where('status', '!=', 'cancelled') // Asumsi status ada active, pending, cancelled
-            ->first();
-
-        if ($existing && $existing->status == 'active') {
-            return redirect()->back()->with('error', 'Anda sudah memiliki tiket untuk event ini.');
+        // Ambil tiket pertama (atau tambah logika pilih tiket)
+        $ticket = $event->tickets->first();
+        if (!$ticket) {
+            return back()->with('error', 'Tiket tidak tersedia untuk event ini.');
         }
 
-        // Jika ada transaksi pending, arahkan ke link pembayaran yang sudah ada
-        if ($existing && $existing->status == 'pending') {
-            $lastTransaction = Transaction::where('registration_id', $existing->id)->latest()->first();
-            if ($lastTransaction && $lastTransaction->payment_status == 'PENDING') {
-                return redirect()->away($lastTransaction->checkout_link);
-            }
+        // Cek apakah user sudah punya transaksi aktif
+        $existing = Transaction::where('user_id', $user->id)
+            ->where('event_id', $event->id)
+            ->where('status', 'success')
+            ->first();
+
+        if ($existing) {
+            return back()->with('error', 'Anda sudah memiliki tiket untuk event ini.');
         }
 
         try {
             DB::beginTransaction();
 
-            // 1. Buat Data Registrasi (Pending)
-            $registration = Registration::create([
-                'user_id' => $user->id,
-                'event_id' => $event->id,
-                'category_id' => $event->category_id, // Sesuaikan jika perlu
-                'status' => 'pending'
-            ]);
+            // Generate kode transaksi
+            $transactionCode = Transaction::generateCode();
 
-            // Hitung Harga (Harga - Diskon)
-            $finalPrice = $event->price;
+            // Hitung harga akhir
+            $finalPrice = $ticket->price;
             if ($event->discount_percentage > 0) {
-                $discountAmount = ($event->price * $event->discount_percentage) / 100;
-                $finalPrice = $event->price - $discountAmount;
+                $discount = ($ticket->price * $event->discount_percentage) / 100;
+                $finalPrice = $ticket->price - $discount;
             }
 
-            // Jika GRATIS, langsung aktifkan
+            // Jika gratis
             if ($finalPrice <= 0) {
-                $registration->update(['status' => 'active']);
+                Transaction::create([
+                    'transaction_code' => $transactionCode,
+                    'user_id' => $user->id,
+                    'event_id' => $event->id,
+                    'ticket_id' => $ticket->id,
+                    'quantity' => 1,
+                    'total_amount' => 0,
+                    'status' => 'success',
+                    'paid_at' => now()
+                ]);
                 DB::commit();
                 return redirect()->route('user.dashboard')->with('success', 'Tiket gratis berhasil diklaim!');
             }
 
-            // 2. Setup Xendit Invoice
-            $external_id = 'TRX-' . time() . '-' . Str::random(5);
-            $apiInstance = new InvoiceApi();
-            $create_invoice_request = new \Xendit\Invoice\CreateInvoiceRequest([
-                'external_id' => $external_id,
-                'amount' => $finalPrice,
-                'payer_email' => $user->email,
-                'description' => 'Tiket Event: ' . $event->name,
-                'invoice_duration' => 86400, // 24 Jam
-                'success_redirect_url' => route('payment.success'),
-                'failure_redirect_url' => route('payment.failed'),
-            ]);
+            // Kirim ke PayLabs
+            $orderData = [
+                'order_id' => $transactionCode,
+                'amount' => (int) $finalPrice,
+                'customer_name' => $user->name,
+                'customer_email' => $user->email,
+                'customer_phone' => $user->phone ?? '08123456789',
+                'return_url' => route('payment.return', ['trx' => $transactionCode]),
+                'callback_url' => route('payment.callback'),
+                'items' => [
+                    [
+                        'name' => $ticket->name,
+                        'price' => (int) $finalPrice,
+                        'quantity' => 1,
+                    ]
+                ],
+            ];
 
-            // 3. Call Xendit API
-            $invoice = $apiInstance->createInvoice($create_invoice_request);
+            $result = $this->payLabs->createTransaction($orderData);
 
-            // 4. Simpan Transaksi Lokal
+            if (!$result['status']) {
+                throw new \Exception($result['message']);
+            }
+
+            // Simpan transaksi
             Transaction::create([
-                'registration_id' => $registration->id,
-                'external_id' => $external_id,
-                'amount' => $finalPrice,
-                'payment_status' => 'PENDING',
-                'checkout_link' => $invoice['invoice_url'],
-                'expiry_date' => \Carbon\Carbon::parse($invoice['expiry_date'])->format('Y-m-d H:i:s')
+                'transaction_code' => $transactionCode,
+                'user_id' => $user->id,
+                'event_id' => $event->id,
+                'ticket_id' => $ticket->id,
+                'quantity' => 1,
+                'total_amount' => $finalPrice,
+                'status' => 'pending',
+                'payment_url' => $result['checkout_link'],
+                'paylabs_response' => $result
             ]);
 
             DB::commit();
 
-            // 5. Redirect User ke Xendit Payment Page
-            return redirect()->away($invoice['invoice_url']);
+            return redirect($result['checkout_link']);
 
-        } catch (\Throwable $th) {
+        } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $th->getMessage());
-            // dd($th->getMessage(), $th->getLine(), $th->getFile());
+            return back()->with('error', 'Gagal membuat transaksi: ' . $e->getMessage());
         }
     }
 
     /**
-     * 2. WEBHOOK (Callback Otomatis dari Xendit)
-     * Pastikan route ini dikecualikan dari CSRF Protection
+     * Redirect setelah pembayaran (dari PayLabs)
+     */
+    public function return(Request $request)
+    {
+        $trxCode = $request->get('trx');
+        $transaction = Transaction::where('transaction_code', $trxCode)->first();
+
+        if ($transaction && $transaction->status === 'pending') {
+            // Untuk MVP, anggap redirect = sukses
+            $transaction->update(['status' => 'success', 'paid_at' => now()]);
+            return view('users.payment.success', compact('transaction'));
+        }
+
+        return view('users.payment.failed');
+    }
+
+    /**
+     * Webhook dari PayLabs (opsional untuk verifikasi real-time)
      */
     public function callback(Request $request)
     {
-        // Ambil callback token dari header (Opsional Security)
-        $xenditXCallbackToken = $request->header('x-callback-token');
-        // if ($xenditXCallbackToken != env('XENDIT_WEBHOOK_TOKEN')) {
-        //     return response()->json(['message' => 'Unauthorized'], 401);
-        // }
+        // TODO: Verifikasi signature & update status real-time
+        // Untuk sekarang, abaikan dulu
+        return response()->json(['status' => 'ok']);
+    }
 
-        $data = $request->all();
+    /**
+     * Riwayat Pembelian
+     */
+    public function history()
+    {
+        $transactions = Transaction::with(['event', 'ticket'])
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->paginate(10);
 
-        // Cari transaksi berdasarkan external_id
-        $transaction = Transaction::where('external_id', $data['external_id'])->first();
+        return view('users.payment.history', compact('transactions'));
+    }
 
-        if ($transaction) {
-            if ($data['status'] == 'PAID') {
-                // Update Transaksi
-                $transaction->update([
-                    'payment_status' => 'PAID',
-                    'payment_method' => $data['payment_method'] ?? null,
-                    'payment_channel' => $data['payment_channel'] ?? null,
-                    'paid_at' => \Carbon\Carbon::parse($data['paid_at']),
-                    'total_paid' => $data['amount']
-                ]);
+    /**
+     * Tampilkan Tiket
+     */
+    public function showTicket($id)
+    {
+        $transaction = Transaction::with(['event', 'ticket'])
+            ->where('user_id', Auth::id())
+            ->findOrFail($id);
 
-                // Update Status Registrasi User menjadi ACTIVE
-                $transaction->registration->update(['status' => 'active']);
-            } 
-            elseif ($data['status'] == 'EXPIRED') {
-                $transaction->update(['payment_status' => 'EXPIRED']);
-                $transaction->registration->update(['status' => 'cancelled']);
-            }
+        if ($transaction->status !== 'success') {
+            abort(403, 'Tiket tidak valid.');
         }
 
-        return response()->json(['message' => 'Success'], 200);
+        return view('users.payment.ticket', compact('transaction'));
     }
-
-    // Halaman Sukses (Redirect dari Xendit)
-    public function success()
-    {
-        return redirect()->route('user.dashboard')->with('success', 'Pembayaran berhasil! Tiket sudah aktif.');
-    }
-
-    // Halaman Gagal
-    public function failed()
-    {
-        return redirect()->route('user.dashboard')->with('error', 'Pembayaran gagal atau dibatalkan.');
-    }
-
-
-    // public function checkout(Request $request, $eventId, PaylabsService $paylabs)
-    // {
-    //     $event = Event::findOrFail($eventId);
-    //     $user = Auth::user();
-
-    //     // Cek Double Order
-    //     $existing = Registration::where('user_id', $user->id)
-    //         ->where('event_id', $event->id)
-    //         ->where('status', '!=', 'cancelled')
-    //         ->first();
-
-    //     if ($existing && $existing->status == 'active') {
-    //         return redirect()->back()->with('error', 'Anda sudah memiliki tiket ini.');
-    //     }
-
-    //     // Redirect ke link lama jika masih pending
-    //     if ($existing && $existing->status == 'pending') {
-    //         $lastTrx = Transaction::where('registration_id', $existing->id)->latest()->first();
-    //         if ($lastTrx && $lastTrx->payment_status == 'PENDING') {
-    //             return redirect()->away($lastTrx->checkout_link);
-    //         }
-    //     }
-
-    //     try {
-    //         DB::beginTransaction();
-
-    //         // A. Buat Registrasi
-    //         $registration = Registration::create([
-    //             'user_id' => $user->id,
-    //             'event_id' => $event->id,
-    //             'category_id' => $event->category_id,
-    //             'status' => 'pending'
-    //         ]);
-
-    //         // Hitung Harga
-    //         $finalPrice = $event->price;
-    //         if ($event->discount_percentage > 0) {
-    //             $discount = ($event->price * $event->discount_percentage) / 100;
-    //             $finalPrice = $event->price - $discount;
-    //         }
-
-    //         // Jika Gratis
-    //         if ($finalPrice <= 0) {
-    //             $registration->update(['status' => 'active']);
-    //             DB::commit();
-    //             return redirect()->route('user.dashboard')->with('success', 'Tiket gratis berhasil diklaim!');
-    //         }
-
-    //         // B. Panggil PayLabs
-    //         $externalId = 'TRX-' . time() . rand(100, 999);
-    //         $paylabsResponse = $paylabs->createTransaction(
-    //             $externalId,
-    //             (int) $finalPrice, // Pastikan integer
-    //             'Tiket: ' . $event->name,
-    //             $user->email,
-    //             $user->name
-    //         );
-
-    //         if (!$paylabsResponse['status']) {
-    //             throw new \Exception($paylabsResponse['message']);
-    //         }
-
-    //         // C. Simpan Transaksi Lokal
-    //         Transaction::create([
-    //             'registration_id' => $registration->id,
-    //             'external_id' => $externalId,
-    //             'amount' => $finalPrice,
-    //             'payment_status' => 'PENDING',
-    //             'checkout_link' => $paylabsResponse['checkout_link'], // URL dari PayLabs
-    //             // PayLabs biasanya expired 24 jam defaultnya
-    //             'expiry_date' => now()->addDay() 
-    //         ]);
-
-    //         DB::commit();
-
-    //         // Redirect user ke halaman pembayaran PayLabs
-    //         return redirect()->away($paylabsResponse['checkout_link']);
-
-    //     } catch (\Throwable $th) {
-    //         DB::rollBack();
-    //         return redirect()->back()->with('error', 'Gagal memproses pembayaran: ' . $th->getMessage());
-    //     }
-    // }
-
-    // /**
-    //  * 2. CALLBACK / WEBHOOK (Dipanggil oleh Server PayLabs)
-    //  */
-    // public function callback(Request $request)
-    // {
-    //     // PayLabs mengirim JSON body
-    //     $data = $request->all();
-
-    //     // Log untuk debugging (Cek di storage/logs/laravel.log)
-    //     \Log::info('PayLabs Callback:', $data);
-
-    //     // Ambil data penting
-    //     $externalId = $data['merchant_trade_no'] ?? null;
-    //     $status = $data['status'] ?? null; // 'success', 'failed', 'pending'
-
-    //     if (!$externalId) {
-    //         return response()->json(['status' => 'error', 'message' => 'No ID'], 400);
-    //     }
-
-    //     $transaction = Transaction::where('external_id', $externalId)->first();
-
-    //     if ($transaction) {
-    //         if ($status == 'success') {
-    //             $transaction->update([
-    //                 'payment_status' => 'PAID',
-    //                 'payment_method' => $data['payment_type'] ?? 'PAYLABS',
-    //                 'paid_at' => now(),
-    //                 'total_paid' => $data['amount'] ?? $transaction->amount
-    //             ]);
-                
-    //             // Aktifkan Tiket
-    //             $transaction->registration->update(['status' => 'active']);
-    //         } 
-    //         elseif ($status == 'failed' || $status == 'expired') {
-    //             $transaction->update(['payment_status' => 'FAILED']);
-    //             $transaction->registration->update(['status' => 'cancelled']);
-    //         }
-    //     }
-
-    //     return response()->json(['status' => 'success']);
-    // }
-
-    // public function success()
-    // {
-    //     return redirect()->route('user.dashboard')->with('success', 'Pembayaran berhasil! Silakan cek tiket Anda.');
-    // }
-
-    // public function failed()
-    // {
-    //     return redirect()->route('user.dashboard')->with('error', 'Pembayaran gagal atau dibatalkan.');
-    // }
 }

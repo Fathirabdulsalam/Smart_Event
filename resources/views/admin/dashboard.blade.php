@@ -6,7 +6,7 @@
         
         <!-- Card 1: Average Sales -->
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h3 class="text-gray-500 font-semibold mb-2">Average Sales</h3>
+            <h3 class="text-gray-500 font-semibold mb-2">Rata Rata Penjualan</h3>
             <div class="flex items-baseline gap-1 mb-4">
                 <span class="text-xs font-semibold text-gray-500">IDR</span>
                 <!-- Format number: 1.000.000 -->
@@ -15,7 +15,7 @@
             <div class="flex items-center justify-between">
                 <div class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                     <span>+500K</span>
-                    <span class="font-normal text-green-600">From last month</span>
+                    <span class="font-normal text-green-600">Dari Bulan Lalu</span>
                 </div>
                 <div class="bg-green-100 text-green-600 rounded-full p-1 text-xs font-bold px-2">
                     ↑ 20%
@@ -25,7 +25,7 @@
 
         <!-- Card 2: Net Income -->
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h3 class="text-gray-500 font-semibold mb-2">Net Income</h3>
+            <h3 class="text-gray-500 font-semibold mb-2">Keuntungan Bersih</h3>
             <div class="flex items-baseline gap-1 mb-4">
                 <span class="text-xs font-semibold text-gray-500">IDR</span>
                 <span class="text-3xl font-bold text-gray-800">{{ number_format($netIncome / 1000, 0, ',', '.') }}K</span>
@@ -33,7 +33,7 @@
             <div class="flex items-center justify-between">
                 <div class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                     <span>+500K</span>
-                    <span class="font-normal text-green-600">From last month</span>
+                    <span class="font-normal text-green-600">Dari Bulan Lalu</span>
                 </div>
                 <div class="bg-green-100 text-green-600 rounded-full p-1 text-xs font-bold px-2">
                     ↑ 20%
@@ -43,14 +43,14 @@
 
         <!-- Card 3: Total Order -->
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h3 class="text-gray-500 font-semibold mb-2">Total Order</h3>
+            <h3 class="text-gray-500 font-semibold mb-2">Total Pesanan</h3>
             <div class="mb-4">
                 <span class="text-3xl font-bold text-gray-800">{{ number_format($totalOrders, 0, ',', '.') }}</span>
             </div>
             <div class="flex items-center justify-between">
                 <div class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                     <span>+100</span>
-                    <span class="font-normal">From last month</span>
+                    <span class="font-normal">Dari Bulan Lalu</span>
                 </div>
                 <div class="bg-red-100 text-red-600 rounded-full p-1 text-xs font-bold px-2">
                     ↓ 5%
@@ -79,7 +79,7 @@
             <!-- Filter Dropdown (Visual Only) -->
             <div class="mb-4">
                 <button class="flex items-center gap-2 text-sm text-gray-600 border border-gray-300 rounded px-3 py-1 hover:bg-gray-50">
-                    Recent Events
+                    Events Terbaru
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
             </div>
@@ -89,10 +89,10 @@
                 <table class="w-full text-left text-sm text-gray-600">
                     <thead class="text-xs font-bold text-gray-500 uppercase border-b border-gray-200">
                         <tr>
-                            <th class="py-3">Event Name</th>
-                            <th class="py-3">Category</th>
-                            <th class="py-3">Price</th>
-                            <th class="py-3 text-right">Views</th>
+                            <th class="py-3">Nama Event</th>
+                            <th class="py-3">Kategori</th>
+                            <th class="py-3">Harga</th>
+                            <th class="py-3 text-right">Pengunjung</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -110,7 +110,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="4" class="py-4 text-center text-gray-500">No events found.</td>
+                            <td colspan="4" class="py-4 text-center text-gray-500">Tidak Ada Event Ditemukan</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -121,7 +121,7 @@
         <!-- Right Section: Chart (Takes up 1 col) -->
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex flex-col h-full">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="font-bold text-gray-800 text-lg">Event Categories</h3>
+                <h3 class="font-bold text-gray-800 text-lg">Kategori Event</h3>
             </div>
 
             <!-- Chart Container -->

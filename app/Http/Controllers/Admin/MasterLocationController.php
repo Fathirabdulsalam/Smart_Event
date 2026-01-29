@@ -18,10 +18,10 @@ class MasterLocationController extends Controller
     {
         $request->validate([
             'name' => 'required|string',
-            'type' => 'required|in:Physical,Virtual'
+            'type' => 'required|in:Fisik,Virtual'
         ]);
         MasterLocation::create($request->all());
-        return back()->with('success', 'Location created successfully!');
+        return back()->with('success', 'Lokasi Berhasil Dibuat!');
     }
 
     public function update(Request $request, $id)
@@ -29,15 +29,15 @@ class MasterLocationController extends Controller
         $loc = MasterLocation::findOrFail($id);
         $request->validate([
             'name' => 'required|string',
-            'type' => 'required|in:Physical,Virtual'
+            'type' => 'required|in:Fisik,Virtual'
         ]);
         $loc->update($request->all());
-        return back()->with('success', 'Location updated successfully!');
+        return back()->with('success', 'Lokasi Berhasil Di Perbarui!');
     }
 
     public function destroy($id)
     {
         MasterLocation::findOrFail($id)->delete();
-        return back()->with('success', 'Location deleted successfully!');
+        return back()->with('success', 'Lokasi Berhasil Dihapus!');
     }
 }

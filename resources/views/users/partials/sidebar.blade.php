@@ -38,7 +38,7 @@
                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
                     </path>
                 </svg>
-                Manage Events
+                Kelola Event
             </a>
 
             <!-- Manage Articles -->
@@ -49,7 +49,7 @@
                         d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z">
                     </path>
                 </svg>
-                Manage Articles
+                Kelola Artikel
             </a>
 
             <a href="{{ route('user.tickets.index') }}"
@@ -59,7 +59,7 @@
                         d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z">
                     </path>
                 </svg>
-                My Tickets
+                Tiket Saya
             </a>
 
             <!-- Purchase History -->
@@ -70,7 +70,7 @@
                         d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
                     </path>
                 </svg>
-                Purchase History
+                History Pembelian
             </a>
 
             <!-- Settings (Profile) -->
@@ -83,7 +83,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
-                Settings
+                Pengaturan
             </a>
 
             <!-- Logout -->
@@ -96,7 +96,7 @@
                             d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
                         </path>
                     </svg>
-                    Logout
+                    Keluar
                 </button>
             </form>
         </nav>

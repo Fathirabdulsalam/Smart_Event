@@ -18,10 +18,10 @@
 
         <!-- Toolbar -->
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex justify-between items-center">
-            <h2 class="text-xl font-bold text-gray-800">Master Slides (Banner)</h2>
+            <h2 class="text-xl font-bold text-gray-800">Master Slide (Banner)</h2>
             <button onclick="openCreateModal()" class="flex items-center gap-2 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-sm font-medium px-5 py-2.5 rounded-lg transition shadow-md">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Add Slide
+                Tambah Slide
             </button>
         </div>
 
@@ -30,12 +30,12 @@
             <table class="w-full text-left border-collapse">
                 <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
                     <tr>
-                        <th class="py-4 px-6">Image</th>
-                        <th class="py-4 px-4">Title & Link</th>
-                        <th class="py-4 px-4">Description</th>
-                        <th class="py-4 px-4 text-center">Order</th>
+                        <th class="py-4 px-6">Gambar</th>
+                        <th class="py-4 px-4">Judul & Link</th>
+                        <th class="py-4 px-4">Deskripsi</th>
+                        <th class="py-4 px-4 text-center">Pesanan</th>
                         <th class="py-4 px-4 text-center">Status</th>
-                        <th class="py-4 px-6 text-right">Action</th>
+                        <th class="py-4 px-6 text-right">Tindakan</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -72,13 +72,13 @@
                                     Edit
                                 </button>
                                 <button onclick="openDeleteModal('{{ $slide->id }}')" class="flex items-center gap-1 px-3 py-1.5 bg-red-500 hover:bg-red-700 text-white text-xs font-medium rounded-md transition shadow-sm">
-                                    Delete
+                                    Hapus
                                 </button>
                             </div>
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="6" class="text-center py-8 text-gray-500">No slides found.</td></tr>
+                    <tr><td colspan="6" class="text-center py-8 text-gray-500">Tidaka ada data slide ditemukan.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -91,15 +91,15 @@
         <div class="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
             <div class="relative transform rounded-xl bg-white text-left shadow-xl transition-all sm:w-full sm:max-w-lg border border-gray-200">
                 <div class="bg-white px-6 py-6">
-                    <h3 class="text-lg font-bold text-[#6C5DD3] mb-4 border-b pb-2">Add New Slide</h3>
+                    <h3 class="text-lg font-bold text-[#6C5DD3] mb-4 border-b pb-2">Tambah Slide</h3>
                     <form action="{{ route('master.slides.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                         @csrf
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Judul</label>
                             <input type="text" name="title" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition" required>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
                             <textarea name="description" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition resize-none"></textarea>
                         </div>
                         <div>
@@ -114,18 +114,18 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                                 <select name="is_active" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-[#6C5DD3] outline-none transition">
-                                    <option value="1">Active</option>
-                                    <option value="0">Inactive</option>
+                                    <option value="1">Aktif</option>
+                                    <option value="0">Tidak Aktif</option>
                                 </select>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Banner Image (1920x600 px)</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Gambar Banner (1920x600 px)</label>
                             <input type="file" name="image" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition" accept="image/*" required>
                         </div>
                         <div class="flex justify-end gap-2 mt-6">
-                            <button type="button" onclick="closeModal('createModal')" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition">Cancel</button>
-                            <button type="submit" class="px-4 py-2 bg-[#6C5DD3] text-white rounded-lg hover:bg-[#5b4ec2] transition shadow-md">Save</button>
+                            <button type="button" onclick="closeModal('createModal')" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition">Batal</button>
+                            <button type="submit" class="px-4 py-2 bg-[#6C5DD3] text-white rounded-lg hover:bg-[#5b4ec2] transition shadow-md">Simpan</button>
                         </div>
                     </form>
                 </div>

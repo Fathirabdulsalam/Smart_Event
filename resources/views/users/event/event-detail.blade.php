@@ -65,15 +65,152 @@
                             </div>
 
                             <span class="text-gray-300">•</span>
+
+                            <!-- Status -->
+                            <span class="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-medium">
+                                {{ ucfirst($event->status) }}
+                            </span>
                         </div>
 
-                        <!-- Description -->
-                        <div>
-                            <h3 class="text-lg font-bold text-gray-800 mb-3">Deskripsi Acara</h3>
+                        <!-- DESKRIPSI EVENT -->
+                        @if (!empty($event->description))
+                            <div class="mb-6">
+                                <h3 class="text-lg font-bold text-gray-800 mb-3">Deskripsi Event</h3>
+                                <div class="prose max-w-none text-gray-600 leading-relaxed">
+                                    {!! nl2br(e($event->description)) !!}
+                                </div>
+                            </div>
+                        @endif
+
+                        <!-- DETAIL ACARA -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-bold text-gray-800 mb-3">Detail Acara</h3>
                             <div class="prose max-w-none text-gray-600 leading-relaxed">
                                 {!! nl2br(e($event->details)) !!}
                             </div>
                         </div>
+
+                        <!-- LOKASI & WAKTU -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-bold text-gray-800 mb-3">Waktu & Lokasi</h3>
+                            <div class="space-y-2">
+                                <p><strong>Tanggal:</strong> {{ $event->date_label }}</p>
+                                <p><strong>Waktu:</strong> 
+                                    {{ \Carbon\Carbon::parse($event->start_time)->format('H:i') }} - 
+                                    {{ \Carbon\Carbon::parse($event->end_time)->format('H:i') }} WIB
+                                </p>
+
+                                @if ($event->location_type === 'online')
+                                    <p><strong>Lokasi:</strong> <span class="text-green-600 font-medium">Online</span></p>
+                                    @if ($event->online_link)
+                                        <p><strong>Link:</strong> 
+                                            <a href="{{ $event->online_link }}" target="_blank" class="text-blue-600 underline">
+                                                {{ Str::limit($event->online_link, 50) }}
+                                            </a>
+                                        </p>
+                                    @endif
+                                @else
+                                    <p><strong>Lokasi:</strong> {{ $event->offline_place_name }}</p>
+                                    <p><strong>Alamat:</strong> {{ $event->offline_address }}</p>
+                                    @if ($event->offline_maps_link)
+                                        <p>
+                                            <a href="{{ $event->offline_maps_link }}" target="_blank" class="text-blue-600 underline text-sm">
+                                                Lihat di Google Maps
+                                            </a>
+                                        </p>
+                                    @endif
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- PERIODE PENJUALAN -->
+                        @if ($event->sale_start_date || $event->sale_end_date)
+                            <div class="mb-6">
+                                <h3 class="text-lg font-bold text-gray-800 mb-3">Periode Penjualan Tiket</h3>
+                                <div class="space-y-1">
+                                    @if ($event->sale_start_date)
+                                        <p><strong>Mulai:</strong> {{ \Carbon\Carbon::parse($event->sale_start_date)->format('d M Y') }}
+                                            @if ($event->sale_start_time)
+                                                pukul {{ \Carbon\Carbon::parse($event->sale_start_time)->format('H:i') }}
+                                            @endif
+                                        </p>
+                                    @endif
+                                    @if ($event->sale_end_date)
+                                        <p><strong>Berakhir:</strong> {{ \Carbon\Carbon::parse($event->sale_end_date)->format('d M Y') }}
+                                            @if ($event->sale_end_time)
+                                                pukul {{ \Carbon\Carbon::parse($event->sale_end_time)->format('H:i') }}
+                                            @endif
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+
+                        <!-- INFO KONTAK -->
+                        @if ($event->contact_name || $event->contact_email || $event->contact_phone)
+                            <div class="mb-6">
+                                <h3 class="text-lg font-bold text-gray-800 mb-3">Info Kontak</h3>
+                                <div class="space-y-1">
+                                    @if ($event->contact_name)
+                                        <p><strong>Nama:</strong> {{ $event->contact_name }}</p>
+                                    @endif
+                                    @if ($event->contact_email)
+                                        <p><strong>Email:</strong> 
+                                            <a href="mailto:{{ $event->contact_email }}" class="text-blue-600 underline">
+                                                {{ $event->contact_email }}
+                                            </a>
+                                        </p>
+                                    @endif
+                                    @if ($event->contact_phone)
+                                        <p><strong>No. Ponsel:</strong> {{ $event->contact_phone }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+
+                        <!-- SYARAT & KETENTUAN -->
+                        @if (!empty($event->terms))
+                            <div class="mb-6">
+                                <h3 class="text-lg font-bold text-gray-800 mb-3">Syarat & Ketentuan</h3>
+                                <div class="prose max-w-none text-gray-600 leading-relaxed border-l-4 border-[#4838CC] pl-4">
+                                    {!! nl2br(e($event->terms)) !!}
+                                </div>
+                            </div>
+                        @endif
+
+                        <!-- DAFTAR TIKET -->
+                        @if ($event->tickets->isNotEmpty())
+                            <div class="mb-6">
+                                <h3 class="text-lg font-bold text-gray-800 mb-3">Jenis Tiket</h3>
+                                <div class="space-y-3">
+                                    @foreach ($event->tickets as $ticket)
+                                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                                            <div class="flex justify-between items-start">
+                                                <div>
+                                                    <h4 class="font-bold text-gray-800">{{ $ticket->name }}</h4>
+                                                    @if ($ticket->description)
+                                                        <p class="text-sm text-gray-600 mt-1">{{ $ticket->description }}</p>
+                                                    @endif
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="font-bold text-[#4838CC]">
+                                                        @if ($ticket->price == 0)
+                                                            <span class="text-green-600">Gratis</span>
+                                                        @else
+                                                            IDR {{ number_format($ticket->price, 0, ',', '.') }}
+                                                        @endif
+                                                    </p>
+                                                    <p class="text-xs text-gray-500 mt-1">
+                                                        Stok: {{ $ticket->quantity }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
                     </div>
                 </div>
 
@@ -88,7 +225,6 @@
                         <h3 class="text-lg font-bold text-gray-800 mb-4">Dapatkan Tiket</h3>
 
                         <!-- Date Info -->
-                        <!-- WAKTU & TEMPAT -->
                         <div class="flex items-start gap-3 mb-6 bg-blue-50 p-3 rounded-lg">
                             <div class="bg-white p-2 rounded text-[#4838CC]">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,13 +237,9 @@
                                 <p class="text-xs text-gray-500 font-semibold uppercase">
                                     Waktu & Tempat
                                 </p>
-
-                                <!-- TANGGAL -->
                                 <p class="text-sm font-bold text-gray-800">
                                     {{ $event->date_label }}
                                 </p>
-
-                                <!-- JAM -->
                                 <p class="text-xs text-gray-600">
                                     {{ \Carbon\Carbon::parse($event->start_time)->format('H:i') }}
                                     -
@@ -115,34 +247,18 @@
                                     WIB
                                 </p>
 
-                                <!-- LOKASI -->
                                 @if ($event->location_type === 'online')
                                     <span
                                         class="inline-block text-[11px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded">
                                         EVENT ONLINE
                                     </span>
-
-                                    @if ($event->online_link)
-                                        <a href="{{ $event->online_link }}" target="_blank"
-                                            class="block text-sm text-blue-600 underline font-semibold mt-1">
-                                            Join Event
-                                        </a>
-                                    @endif
                                 @else
                                     <p class="text-sm font-bold text-gray-800">
                                         {{ $event->offline_place_name }}
                                     </p>
-
                                     <p class="text-xs text-gray-600">
                                         {{ $event->offline_address }}
                                     </p>
-
-                                    @if ($event->offline_maps_link)
-                                        <a href="{{ $event->offline_maps_link }}" target="_blank"
-                                            class="inline-block text-xs text-blue-600 underline mt-1">
-                                            Lihat di Google Maps
-                                        </a>
-                                    @endif
                                 @endif
                             </div>
                         </div>
@@ -157,26 +273,18 @@
                             </div>
                         @endif
 
-
                         <!-- Price Info -->
                         <div class="mb-6">
-                            <p class="text-sm text-gray-500 mb-1">Harga</p>
-                            @if ($event->price == 0)
+                            <p class="text-sm text-gray-500 mb-1">Harga Mulai Dari</p>
+                            @php
+                                $minPrice = $event->tickets->min('price');
+                            @endphp
+                            @if ($minPrice == 0)
                                 <span class="text-3xl font-bold text-[#00C851]">FREE</span>
                             @else
-                                <div class="flex items-end gap-2">
-                                    <span class="text-3xl font-bold text-[#4838CC]">
-                                        IDR {{ number_format($event->price, 0, ',', '.') }}
-                                    </span>
-                                    @if ($event->discount_percentage > 0)
-                                        @php
-                                            $originalPrice = $event->price / (1 - $event->discount_percentage / 100);
-                                        @endphp
-                                        <span class="text-sm text-gray-400 line-through mb-1">
-                                            IDR {{ number_format($originalPrice, 0, ',', '.') }}
-                                        </span>
-                                    @endif
-                                </div>
+                                <span class="text-3xl font-bold text-[#4838CC]">
+                                    IDR {{ number_format($minPrice, 0, ',', '.') }}
+                                </span>
                             @endif
                         </div>
 
@@ -190,13 +298,11 @@
                                     Buy Ticket Now
                                 </button>
                             @else
-                                <!-- Jika belum login, arahkan ke login -->
                                 <a href="{{ route('login') }}"
                                     class="block text-center w-full bg-[#4838CC] hover:bg-[#3b2db0] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200 transition transform hover:-translate-y-0.5 mb-3">
                                     Login to Buy Ticket
                                 </a>
                             @endauth
-
                         </form>
 
                         <p class="text-xs text-center text-gray-400">Pembayaran aman melalui QRIS / Transfer Bank</p>
@@ -214,7 +320,6 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                 @forelse($relatedEvents as $relEvent)
                     <a href="{{ route('event.detail', $relEvent->id) }}" class="flex flex-col group">
-                        <!-- Image Box -->
                         <div class="bg-white rounded-xl h-40 w-full mb-3 overflow-hidden shadow-md relative">
                             @if ($relEvent->poster_path)
                                 <img src="{{ Storage::url($relEvent->poster_path) }}"
@@ -226,7 +331,6 @@
                             @endif
                         </div>
 
-                        <!-- Content -->
                         <h3
                             class="text-gray-900 font-bold text-xs uppercase tracking-wide truncate mb-1 group-hover:text-[#4838CC] transition">
                             {{ $relEvent->name }}

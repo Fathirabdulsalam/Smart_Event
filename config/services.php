@@ -34,5 +34,11 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    
+    'paylabs' => [
+    'mid' => env('PAYLABS_MID'),
+    'public_key' => env('PAYLABS_PUBLIC_KEY'),
+    'api_url' => env('PAYLABS_API_URL'),
+    ],
 
 ];
