@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+
         $middleware->redirectGuestsTo(function (Request $request) {
             if ($request->is('admin') || $request->is('admin/*')) {
                 return route('showLoginAdmin');
@@ -22,22 +23,21 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->redirectUsersTo(function (Request $request) {
             if (Auth::user()->role === 'admin') {
-                return route('dashboardAdmin'); 
+                return route('dashboardAdmin');
             }
-            return url('/dashboard'); 
+            return url('/dashboard');
         });
 
-        // $middleware->validateCsrfTokens(except: [
-        //     'payment/callback', 
-        // ]); // Xendit
-
-         $middleware->validateCsrfTokens(except: [
-            'payment/callback', // Route Webhook PayLabs
+        // ✅ webhook Midtrans / Paylabs / dll
+        $middleware->validateCsrfTokens(except: [
+            'payment/callback',
+            'midtrans/callback',
         ]);
 
         $middleware->alias([
             'admin' => AdminMiddleware::class,
         ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -28,6 +28,10 @@ use App\Http\Controllers\User\UserTransactionController;
 use App\Http\Controllers\Admin\MasterEventKindController;
 use App\Http\Controllers\Admin\MasterSocialMediaController;
 use App\Http\Controllers\Admin\MasterTicketCategoryController;
+use App\Http\Controllers\MidtransCallbackController;
+
+Route::post('/midtrans/callback', [MidtransCallbackController::class, 'handle']);
+
 
 // Landing Page Routes
 Route::get('/landingPage', [LandingPageController::class, 'index'])->name('landingPage');
@@ -61,7 +65,8 @@ Route::middleware(['guest'])->group(function () {
 });
 
 // PayLabs Routes (Public Access)
-Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
+// Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
+Route::post('/pay', [PaymentController::class, 'pay'])->name('payment.checkout');
 
 // Authenticated User Routes
 Route::middleware(['auth'])->group(function () {
@@ -88,7 +93,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/user/transactions', [UserTransactionController::class, 'index'])->name('user.transactions.index');
 
     // PAYLABS PAYMENT ROUTES
-    Route::post('/payment/checkout/{event}', [PaymentController::class, 'checkout'])->name('payment.checkout');
+    // Route::post('/payment/checkout/{event}', [PaymentController::class, 'checkout'])->name('payment.checkout');
     Route::get('/payment/return', [PaymentController::class, 'return'])->name('payment.return');
     Route::get('/payment/history', [UserTransactionController::class, 'index'])->name('payment.history');
     Route::get('/ticket/{transaction}', [PaymentController::class, 'showTicket'])->name('ticket.show');

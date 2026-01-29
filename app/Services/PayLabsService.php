@@ -10,11 +10,13 @@ class PayLabsService
 {
     protected $mid;
     protected $baseUrl;
+    protected $publickey;
 
     public function __construct()
     {
         $this->mid = config('paylabs.merchant_id');
         $this->baseUrl = config('paylabs.base_url');
+        $this->publicKey = config('paylabs.public_key');
     }
 
     public function createTransaction(array $data)
@@ -54,5 +56,23 @@ class PayLabsService
                 'message' => 'PayLabs connection failed'
             ];
         }
+    }
+
+    public function verifyCallback(array $payload, string $signature): bool
+    {
+        if (!$signature || empty($payload)) {
+            return false;
+        }
+
+        $stringToVerify = $payload['order_id']
+            . '|' . $payload['amount']
+            . '|' . $payload['status'];
+
+        return openssl_verify(
+            $stringToVerify,
+            base64_decode($signature),
+            $this->publicKey,
+            OPENSSL_ALGO_SHA256
+        ) === 1;
     }
 }
