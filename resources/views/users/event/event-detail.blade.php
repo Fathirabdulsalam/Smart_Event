@@ -87,7 +87,7 @@
                             <h3 class="text-lg font-bold text-gray-800 mb-3">Detail Acara</h3>
                             <div class="prose max-w-none text-gray-600 leading-relaxed">
                                 {!! nl2br(e($event->details)) !!}
-                            </div>
+                                </div>
                         </div>
 
                         <!-- LOKASI & WAKTU -->
@@ -182,9 +182,13 @@
                         @if ($event->tickets->isNotEmpty())
                             <div class="mb-6">
                                 <h3 class="text-lg font-bold text-gray-800 mb-3">Jenis Tiket</h3>
-                                <div class="space-y-3">
-                                    @foreach ($event->tickets as $ticket)
-                                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                                <div class="space-y-3" id="ticket-list">
+                                    @foreach ($event->tickets as $index => $ticket)
+                                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition ticket-item" 
+                                             data-price="{{ $ticket->price }}"
+                                             data-ticket-id="{{ $ticket->id }}"
+                                             data-ticket-name="{{ $ticket->name }}"
+                                             onclick="selectTicket(this, {{ $ticket->id }})">
                                             <div class="flex justify-between items-start">
                                                 <div>
                                                     <h4 class="font-bold text-gray-800">{{ $ticket->name }}</h4>
@@ -273,24 +277,113 @@
                             </div>
                         @endif
 
+                        <!-- Ticket Selection -->
+                        @if ($event->tickets->isNotEmpty())
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Pilih Jenis Tiket
+                                </label>
+                                <div class="space-y-3">
+                                    @foreach ($event->tickets as $ticket)
+                                        <div class="flex items-center">
+                                            <input type="radio" 
+                                                   id="ticket-{{ $ticket->id }}" 
+                                                   name="ticket_id" 
+                                                   value="{{ $ticket->id }}"
+                                                   data-price="{{ $ticket->price }}"
+                                                   data-name="{{ $ticket->name }}"
+                                                   class="h-4 w-4 text-[#4838CC] focus:ring-[#4838CC] border-gray-300 ticket-radio"
+                                                   {{ $loop->first ? 'checked' : '' }}
+                                                   onchange="updatePrice(this)">
+                                            <label for="ticket-{{ $ticket->id }}" class="ml-3 block text-sm text-gray-700">
+                                                <span class="font-medium">{{ $ticket->name }}</span>
+                                                @if ($ticket->price == 0)
+                                                    <span class="ml-2 text-green-600 font-bold">GRATIS</span>
+                                                @else
+                                                    <span class="ml-2 text-[#4838CC] font-bold">
+                                                        IDR {{ number_format($ticket->price, 0, ',', '.') }}
+                                                    </span>
+                                                @endif
+                                                @if ($ticket->description)
+                                                    <p class="text-xs text-gray-500 mt-1">{{ $ticket->description }}</p>
+                                                @endif
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
                         <!-- Price Info -->
                         <div class="mb-6">
-                            <p class="text-sm text-gray-500 mb-1">Harga Mulai Dari</p>
-                            @php
-                                $minPrice = $event->tickets->min('price');
-                            @endphp
-                            @if ($minPrice == 0)
-                                <span class="text-3xl font-bold text-[#00C851]">FREE</span>
-                            @else
-                                <span class="text-3xl font-bold text-[#4838CC]">
-                                    IDR {{ number_format($minPrice, 0, ',', '.') }}
-                                </span>
-                            @endif
+                            <p class="text-sm text-gray-500 mb-1">Harga</p>
+                            <div id="price-display">
+                                @php
+                                    $firstTicket = $event->tickets->first();
+                                @endphp
+                                @if ($firstTicket->price == 0)
+                                    <span class="text-3xl font-bold text-[#00C851]">FREE</span>
+                                @else
+                                    <span class="text-3xl font-bold text-[#4838CC]">
+                                        IDR {{ number_format($firstTicket->price, 0, ',', '.') }}
+                                    </span>
+                                @endif
+                            </div>
+                            <p id="selected-ticket-name" class="text-sm text-gray-600 mt-1">
+                                {{ $firstTicket->name }}
+                            </p>
+                        </div>
+
+                        <!-- Quantity Selection -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Jumlah Tiket
+                            </label>
+                            <div class="flex items-center">
+                                <button type="button" 
+                                        onclick="updateQuantity(-1)" 
+                                        class="bg-gray-100 text-gray-700 hover:bg-gray-200 w-10 h-10 rounded-l-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                    </svg>
+                                </button>
+                                <input type="number" 
+                                       id="quantity" 
+                                       name="quantity" 
+                                       value="1" 
+                                       min="1" 
+                                       max="10"
+                                       class="w-16 text-center border-y border-gray-300 h-10 text-lg font-semibold"
+                                       onchange="calculateTotal()">
+                                <button type="button" 
+                                        onclick="updateQuantity(1)" 
+                                        class="bg-gray-100 text-gray-700 hover:bg-gray-200 w-10 h-10 rounded-r-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Total Price -->
+                        <div class="mb-6 border-t border-gray-200 pt-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg font-bold text-gray-800">Total</span>
+                                <div id="total-price" class="text-2xl font-bold text-[#4838CC]">
+                                    @if ($firstTicket->price == 0)
+                                        FREE
+                                    @else
+                                        IDR {{ number_format($firstTicket->price, 0, ',', '.') }}
+                                    @endif
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Action Button -->
-                        <form action="{{ route('payment.checkout', $event->id) }}" method="POST">
+                        <form action="{{ route('payment.checkout', $event->id) }}" method="POST" id="checkout-form">
                             @csrf
+                            <input type="hidden" id="selected_ticket_id" name="ticket_id" value="{{ $firstTicket->id }}">
+                            <input type="hidden" id="selected_quantity" name="quantity" value="1">
 
                             @auth
                                 <button type="submit"
@@ -350,3 +443,121 @@
     </div>
 
 @endsection
+
+@push('scripts')
+<script>
+    let currentPrice = {{ $firstTicket->price }};
+    let currentTicketId = {{ $firstTicket->id }};
+    let currentTicketName = "{{ $firstTicket->name }}";
+    let quantity = 1;
+
+    function updatePrice(element) {
+        const price = parseFloat(element.dataset.price);
+        const ticketId = element.value;
+        const ticketName = element.dataset.name;
+        
+        currentPrice = price;
+        currentTicketId = ticketId;
+        currentTicketName = ticketName;
+        
+        // Update hidden inputs
+        document.getElementById('selected_ticket_id').value = ticketId;
+        document.getElementById('selected_quantity').value = quantity;
+        
+        // Update price display
+        const priceDisplay = document.getElementById('price-display');
+        const ticketNameDisplay = document.getElementById('selected-ticket-name');
+        
+        if (price === 0) {
+            priceDisplay.innerHTML = '<span class="text-3xl font-bold text-[#00C851]">FREE</span>';
+        } else {
+            priceDisplay.innerHTML = `<span class="text-3xl font-bold text-[#4838CC]">IDR ${formatPrice(price)}</span>`;
+        }
+        
+        ticketNameDisplay.textContent = ticketName;
+        
+        // Update total
+        calculateTotal();
+        
+        // Update visual selection in ticket list
+        updateTicketSelection(ticketId);
+    }
+
+    function updateTicketSelection(ticketId) {
+        // Remove selected class from all tickets
+        document.querySelectorAll('.ticket-item').forEach(item => {
+            item.classList.remove('border-[#4838CC]', 'bg-blue-50');
+            item.classList.add('border-gray-200');
+        });
+        
+        // Add selected class to clicked ticket
+        const selectedTicket = document.querySelector(`.ticket-item[data-ticket-id="${ticketId}"]`);
+        if (selectedTicket) {
+            selectedTicket.classList.remove('border-gray-200');
+            selectedTicket.classList.add('border-[#4838CC]', 'bg-blue-50');
+        }
+        
+        // Also check the corresponding radio button
+        const radioBtn = document.getElementById(`ticket-${ticketId}`);
+        if (radioBtn) {
+            radioBtn.checked = true;
+        }
+    }
+
+    function selectTicket(element, ticketId) {
+        const radioBtn = document.getElementById(`ticket-${ticketId}`);
+        if (radioBtn) {
+            radioBtn.checked = true;
+            updatePrice(radioBtn);
+        }
+    }
+
+    function updateQuantity(change) {
+        const quantityInput = document.getElementById('quantity');
+        let newQuantity = parseInt(quantityInput.value) + change;
+        
+        if (newQuantity < 1) newQuantity = 1;
+        if (newQuantity > 10) newQuantity = 10;
+        
+        quantityInput.value = newQuantity;
+        quantity = newQuantity;
+        document.getElementById('selected_quantity').value = newQuantity;
+        
+        calculateTotal();
+    }
+
+    function calculateTotal() {
+        const quantityInput = document.getElementById('quantity');
+        quantity = parseInt(quantityInput.value);
+        
+        const totalElement = document.getElementById('total-price');
+        const total = currentPrice * quantity;
+        
+        if (currentPrice === 0) {
+            totalElement.textContent = 'FREE';
+        } else {
+            totalElement.textContent = `IDR ${formatPrice(total)}`;
+        }
+        
+        document.getElementById('selected_quantity').value = quantity;
+    }
+
+    function formatPrice(price) {
+        return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Select first ticket by default
+        const firstTicket = document.querySelector('.ticket-item');
+        if (firstTicket) {
+            const ticketId = firstTicket.dataset.ticketId;
+            updateTicketSelection(ticketId);
+        }
+        
+        // Handle quantity input changes
+        const quantityInput = document.getElementById('quantity');
+        quantityInput.addEventListener('input', calculateTotal);
+    });
+</script>
+@endpush

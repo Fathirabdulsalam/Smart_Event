@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Services\PaylabsSignature;
 
 class PayLabsService
 {
@@ -12,39 +13,45 @@ class PayLabsService
 
     public function __construct()
     {
-        $this->mid = env('PAYLABS_MID');
-        $this->baseUrl = env('PAYLABS_API_URL');
+        $this->mid = config('paylabs.merchant_id');
+        $this->baseUrl = config('paylabs.base_url');
     }
 
-    public function createTransaction($data)
+    public function createTransaction(array $data)
     {
         try {
+            $path = '/v4/payment/inquiry';
+            $method = 'POST';
+            $timestamp = now()->utc()->format('Y-m-d\TH:i:s\Z');
+            $body = json_encode($data, JSON_UNESCAPED_SLASHES);
+
+            $signature = PaylabsSignature::generate(
+                $method,
+                $path,
+                $timestamp,
+                $body
+            );
+
             $response = Http::withHeaders([
-                'MID' => $this->mid,
-                'Content-Type' => 'application/json',
-            ])->post("{$this->baseUrl}/api/v1/transaction", $data);
+                'Content-Type'  => 'application/json',
+                'X-TIMESTAMP'   => $timestamp,
+                'X-SIGNATURE'   => $signature,
+                'X-MERCHANT-ID' => $this->mid,
+            ])->post(
+                $this->baseUrl . $path,
+                $data
+            );
 
-            $result = $response->json();
+            return $response->json();
 
-            if ($response->successful() && isset($result['data']['payment_url'])) {
-                return [
-                    'status' => true,
-                    'checkout_link' => $result['data']['payment_url'],
-                    'message' => 'Success'
-                ];
-            }
+        } catch (\Throwable $e) {
+            Log::error('PayLabs Exception', [
+                'message' => $e->getMessage()
+            ]);
 
-            Log::error('PayLabs Error', $result);
             return [
                 'status' => false,
-                'message' => $result['message'] ?? 'Gagal membuat transaksi'
-            ];
-
-        } catch (\Exception $e) {
-            Log::error('PayLabs Exception', ['message' => $e->getMessage()]);
-            return [
-                'status' => false,
-                'message' => 'Koneksi ke PayLabs gagal'
+                'message' => 'PayLabs connection failed'
             ];
         }
     }
