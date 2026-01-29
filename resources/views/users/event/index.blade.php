@@ -145,6 +145,11 @@
                                 document.getElementById('edit_sale_start_time').value = "{{ $event->sale_start_time ? \Carbon\Carbon::parse($event->sale_start_time)->format('H:i') : '' }}";
                                 document.getElementById('edit_sale_end_time').value = "{{ $event->sale_end_time ? \Carbon\Carbon::parse($event->sale_end_time)->format('H:i') : '' }}";
 
+                                // === KONFIGURASI TRANSAKSI ===
+                                document.getElementById('edit_max_ticket_per_trx').value = "{{ $event->max_ticket_per_trx ?? 5 }}";
+                                document.getElementById('edit_one_email_one_trx').checked = {{ $event->one_email_one_trx ? 'true' : 'false' }};
+                                document.getElementById('edit_one_ticket_one_person').checked = {{ $event->one_ticket_one_person ? 'true' : 'false' }};
+
                                 // Online/Offline
                                 document.getElementById('edit_online_link').value = "{{ $event->online_link ?? '' }}";
                                 document.getElementById('edit_offline_place').value = "{{ $event->offline_place_name ?? '' }}";
@@ -399,6 +404,32 @@
                             <textarea name="details" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm resize-none"></textarea>
                         </div>
 
+                        <!-- KONFIGURASI TRANSAKSI -->
+                        <div class="border-t pt-4 mt-4">
+                            <h3 class="font-semibold text-gray-700 mb-3">Konfigurasi Transaksi</h3>
+                            
+                            <!-- Max Tiket per Transaksi -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Maksimal Tiket per Transaksi</label>
+                                    <input type="number" name="max_ticket_per_trx" value="5"
+                                        class="w-full border rounded-lg px-3 py-2 text-sm">
+                                </div>
+                            </div>
+
+                            <!-- Checkbox Rules -->
+                            <div class="space-y-2 mb-3">
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="one_email_one_trx" value="1" checked>
+                                    <span class="text-sm">Satu email hanya boleh beli 1 kali</span>
+                                </label>
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="one_ticket_one_person" value="1" checked>
+                                    <span class="text-sm">Satu tiket hanya untuk satu orang</span>
+                                </label>
+                            </div>
+                        </div>
+
                         <!-- TIKET (DYNAMIC) -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
@@ -583,6 +614,32 @@
                         <div>
                             <label class="block text-xs font-semibold text-gray-600 mb-1">Detail Tambahan</label>
                             <textarea name="details" id="edit_details" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm resize-none"></textarea>
+                        </div>
+
+                        <!-- KONFIGURASI TRANSAKSI -->
+                        <div class="border-t pt-4 mt-4">
+                            <h3 class="font-semibold text-gray-700 mb-3">Konfigurasi Transaksi</h3>
+                            
+                            <!-- Max Tiket per Transaksi -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Maksimal Tiket per Transaksi</label>
+                                    <input type="number" name="max_ticket_per_trx" id="edit_max_ticket_per_trx" value="5"
+                                        class="w-full border rounded-lg px-3 py-2 text-sm">
+                                </div>
+                            </div>
+
+                            <!-- Checkbox Rules -->
+                            <div class="space-y-2 mb-3">
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="one_email_one_trx" id="edit_one_email_one_trx" value="1">
+                                    <span class="text-sm">Satu email hanya boleh beli 1 kali</span>
+                                </label>
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="one_ticket_one_person" id="edit_one_ticket_one_person" value="1">
+                                    <span class="text-sm">Satu tiket hanya untuk satu orang</span>
+                                </label>
+                            </div>
                         </div>
 
                         <!-- TIKET SECTION (EDIT) -->

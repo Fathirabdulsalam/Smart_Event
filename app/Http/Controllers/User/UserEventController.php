@@ -87,6 +87,9 @@ class UserEventController extends Controller
             'tickets.*.quantity' => 'required|integer|min:1',
             'tickets.*.price' => 'required|integer|min:0',
             'tickets.*.description' => 'nullable|string',
+            'max_ticket_per_trx' => 'nullable|integer|min:1',
+            'one_email_one_trx' => 'nullable|boolean',
+            'one_ticket_one_person' => 'nullable|boolean',
         ];
 
         $typeName = MasterType::find($request->master_type_id)?->name;
@@ -178,6 +181,9 @@ class UserEventController extends Controller
             'tickets.*.quantity' => 'required|integer|min:1',
             'tickets.*.price' => 'required|integer|min:0',
             'tickets.*.description' => 'nullable|string',
+            'max_ticket_per_trx' => 'nullable|integer|min:1',
+            'one_email_one_trx' => 'nullable|boolean',
+            'one_ticket_one_person' => 'nullable|boolean',
         ];
 
         $typeName = MasterType::find($request->master_type_id)?->name;

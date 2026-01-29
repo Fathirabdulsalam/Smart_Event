@@ -52,6 +52,17 @@ class Event extends Model
         'sale_end_date',
         'sale_start_time',
         'sale_end_time',
+
+         // Konfigurasi Transaksi
+        'max_ticket_per_trx',
+        'one_email_one_trx',
+        'one_ticket_one_person',
+        
+        // Sosial Media
+        'sosmed_instagram',
+        'sosmed_twitter',
+        'sosmed_linkedin',
+        'sosmed_facebook',
     ];
 
     protected $casts = [
