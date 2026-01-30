@@ -40,8 +40,10 @@ class PaylabsCallbackController extends Controller
             'payment' => $result['payment'],
             'paylabs' => $result['paylabs']['json'],
             'debug' => [
+                'url' => $result['paylabs']['url'] ?? null,
                 'request_headers' => $result['paylabs']['headers'],
                 'http_status' => $result['paylabs']['status'],
+                'raw' => $result['paylabs']['raw'] ?? null,
             ],
         ], 200);
     }

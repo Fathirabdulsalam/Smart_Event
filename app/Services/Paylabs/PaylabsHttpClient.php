@@ -24,62 +24,68 @@ class PaylabsHttpClient
     }
 
     public function post(string $path, array $payload, ?string $requestId = null): array
-{
-    $server = config('paylabs.server', 'SIT');
-    $merchantId = config('paylabs.merchant_id');
-    $baseUrlMap = config('paylabs.base_url', []);
-    $baseUrl = $baseUrlMap[$server] ?? ($baseUrlMap['SIT'] ?? null);
+    {
+        $server = \config('paylabs.server', 'SIT');
+        $version = \config('paylabs.version', 'v2.3');
+        $merchantId = \config('paylabs.merchant_id');
+        $baseUrlMap = \config('paylabs.base_url', []);
+        $baseUrl = $baseUrlMap[$server] ?? ($baseUrlMap['SIT'] ?? null);
 
-    if (!$baseUrl || !$merchantId) {
-        throw new \RuntimeException('Paylabs config incomplete');
+        if (!$baseUrl) {
+            throw new \RuntimeException(
+                "Paylabs base URL is not configured (server={$server}). " .
+                'Set PAYLABS_BASE_URL_SIT (or PAYLABS_BASE_URL) in .env and clear config cache.'
+            );
+        }
+        if (!$merchantId) {
+            throw new \RuntimeException(
+                'Paylabs merchant id is not configured. Set PAYLABS_MERCHANT_ID in .env and clear config cache.'
+            );
+        }
+
+        $timestamp = $this->timestamp();
+        $headerRequestId = $requestId ?: $this->requestId();
+
+        $privateKey = PaylabsKeyResolver::resolvePrivateKey();
+        if (!$privateKey) {
+            throw new \RuntimeException('Paylabs private key is not configured');
+        }
+
+        $bodyJson = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($bodyJson === false) {
+            throw new \RuntimeException('Failed to JSON-encode request payload');
+        }
+
+        $hash = strtolower(hash('sha256', $bodyJson));
+        $stringToSign = "POST:/payment/{$version}{$path}:{$hash}:{$timestamp}";
+        $signature = PaylabsCrypto::sign($stringToSign, $privateKey);
+
+        $url = rtrim($baseUrl, '/') . "/payment/{$version}{$path}";
+
+        $response = Http::timeout(30)
+            ->withHeaders([
+                'Content-Type' => 'application/json;charset=utf-8',
+                'X-TIMESTAMP' => $timestamp,
+                'X-SIGNATURE' => $signature,
+                'X-PARTNER-ID' => $merchantId,
+                'X-REQUEST-ID' => $headerRequestId,
+            ])
+            ->withBody($bodyJson, 'application/json')
+            ->post($url);
+
+        return [
+            'ok' => $response->successful(),
+            'status' => $response->status(),
+            'json' => $response->json(),
+            'raw' => $response->body(),
+            'url' => $url,
+            'string_to_sign' => $stringToSign,
+            'headers' => [
+                'X-TIMESTAMP' => $timestamp,
+                'X-SIGNATURE' => $signature,
+                'X-PARTNER-ID' => $merchantId,
+                'X-REQUEST-ID' => $headerRequestId,
+            ],
+        ];
     }
-
-    $privateKey = PaylabsKeyResolver::resolvePrivateKey();
-    if (!$privateKey) {
-        throw new \RuntimeException('Paylabs private key not found');
-    }
-
-    $bodyJson = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    if ($bodyJson === false) {
-        throw new \RuntimeException('JSON encode failed');
-    }
-
-    $hash = strtolower(hash('sha256', $bodyJson));
-    $unixTimestamp = now()->timestamp; // ⚠️ UNIX TIMESTAMP
-    $stringToSign = "POST:{$path}:{$hash}:{$unixTimestamp}"; // ⚠️ PATH ASLI SAJA
-
-    $signature = PaylabsCrypto::sign($stringToSign, $privateKey);
-    \Log::info('Paylabs Request', [
-    'url' => rtrim($baseUrl, '/') . $path,
-    'payload' => $payload,
-    'headers' => [
-        'X-TIMESTAMP' => (string) $unixTimestamp,
-        'X-SIGNATURE' => $signature,
-        'X-PARTNER-ID' => $merchantId,
-    ],
-    'string_to_sign' => "POST:{$path}:{$hash}:{$unixTimestamp}",
-]);
-    $response = Http::timeout(30)
-        ->withHeaders([
-            'Content-Type' => 'application/json',
-            'X-TIMESTAMP' => (string) $unixTimestamp, // ⚠️ KIRIM JUGA DALAM HEADER
-            'X-SIGNATURE' => $signature,
-            'X-PARTNER-ID' => $merchantId,
-            'X-REQUEST-ID' => $requestId ?: $this->requestId(),
-        ])
-        ->post(rtrim($baseUrl, '/') . $path, $payload); // ⚠️ BASE URL SUDAH TERMASUK /payment/v2.3 ?
-    
-    return [
-        'ok' => $response->successful(),
-        'status' => $response->status(),
-        'json' => $response->json(),
-        'raw' => $response->body(),
-        'headers' => [
-            'X-TIMESTAMP' => (string) $unixTimestamp,
-            'X-SIGNATURE' => $signature,
-            'X-PARTNER-ID' => $merchantId,
-            'X-REQUEST-ID' => $requestId ?: $this->requestId(),
-        ],
-    ];
-}
 }
