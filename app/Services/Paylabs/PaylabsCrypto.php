@@ -39,24 +39,32 @@ class PaylabsCrypto
     }
 
     public static function sign(string $data, string $privateKey): string
-    {
-        $binarySignature = '';
-        $ok = openssl_sign($data, $binarySignature, $privateKey, OPENSSL_ALGO_SHA256);
+{
+    $binarySignature = '';
+    
+    // Gunakan OPENSSL_ALGO_SHA256 dengan padding PKCS#1 v1.5 (default)
+    $ok = openssl_sign(
+        $data,
+        $binarySignature,
+        $privateKey,
+        "sha256WithRSAEncryption" // 👈 eksplisit gunakan algoritma ini
+    );
 
-        if ($ok !== true) {
-            throw new \RuntimeException('Failed to sign payload');
-        }
-
-        return base64_encode($binarySignature);
+    if ($ok !== true) {
+        throw new \RuntimeException('Failed to sign payload');
     }
 
-    public static function verify(string $data, string $signatureBase64, string $publicKey): bool
-    {
-        $binarySignature = base64_decode($signatureBase64, true);
-        if ($binarySignature === false) {
-            return false;
-        }
+    return base64_encode($binarySignature);
+}
 
-        return openssl_verify($data, $binarySignature, $publicKey, OPENSSL_ALGO_SHA256) === 1;
+public static function verify(string $data, string $signatureBase64, string $publicKey): bool
+{
+    $binarySignature = base64_decode($signatureBase64, true);
+    if ($binarySignature === false) {
+        return false;
     }
+
+    // Gunakan algoritma yang sama seperti signing
+    return openssl_verify($data, $binarySignature, $publicKey, "sha256WithRSAEncryption") === 1;
+}
 }

@@ -17,6 +17,10 @@ return new class extends Migration
             // Kode Transaksi: TRX2601180001
             $table->string('transaction_code')->unique();
             
+            $table->date('transaction_date')->index();       // ✅ Tanggal transaksi (YYYY-MM-DD)
+            $table->unsignedInteger('sequence_number');     // ✅ Nomor urut hari ini (1, 2, 3...)
+            $table->unique(['transaction_date', 'sequence_number']); // ✅ Jamin unik per hari
+            
             // Relasi
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('event_id')->constrained()->cascadeOnDelete();

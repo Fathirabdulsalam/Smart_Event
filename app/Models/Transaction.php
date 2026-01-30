@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Transaction extends Model
 {
@@ -42,16 +43,40 @@ class Transaction extends Model
         return $this->belongsTo(EventTicket::class);
     }
 
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
+    }
+
     // Generate kode transaksi: TRX + YYMMDD + nomor urut
     public static function generateCode()
     {
-        $date = now()->format('ymd'); // 260118
-        $last = self::whereDate('created_at', today())
-                    ->where('transaction_code', 'like', "TRX{$date}%")
-                    ->orderBy('id', 'desc')
-                    ->first();
+        return DB::transaction(function () {
+            $today = now()->toDateString(); // '2026-01-18'
+            $ymd = now()->format('ymd');    // '260118'
 
-        $number = $last ? (intval(substr($last->transaction_code, -4)) + 1) : 1;
-        return "TRX{$date}" . str_pad($number, 4, '0', STR_PAD_LEFT);
+            // Ambil sequence terakhir hari ini dengan row lock
+            $last = self::where('transaction_date', $today)
+                ->lockForUpdate()
+                ->orderBy('sequence_number', 'desc')
+                ->first();
+
+            $nextSeq = ($last ? $last->sequence_number : 0) + 1;
+
+            return "TRX{$ymd}" . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
+        });
+    }
+
+    // 🔁 Isi field otomatis saat create()
+    protected static function booted()
+    {
+        static::creating(function ($transaction) {
+            if (empty($transaction->transaction_code)) {
+                $code = self::generateCode();
+                $transaction->transaction_code = $code;
+                $transaction->transaction_date = now()->toDateString();
+                $transaction->sequence_number = (int) substr($code, -4);
+            }
+        });
     }
 }

@@ -41,6 +41,8 @@ class PaylabsQrisService
             $payload['productInfo'] = $input['productInfo'];
         }
 
+        $transaction = \App\Models\Transaction::where('transaction_code', $merchantTradeNo)->first();
+
         $payment = Payment::create([
             'provider' => 'paylabs',
             'payment_type' => 'QRIS',
@@ -51,6 +53,7 @@ class PaylabsQrisService
             'product_name' => $payload['productName'],
             'status' => null,
             'raw_request' => $payload,
+            'transaction_id' => $transaction?->id,
         ]);
 
         $result = $this->client->post('/qris/create', $payload, $requestId);
@@ -142,6 +145,8 @@ class PaylabsQrisService
     {
         $merchantId = \config('paylabs.merchant_id');
 
+        
+
         $path = (string) ($input['path'] ?? '');
         $rawBody = (string) ($input['rawBody'] ?? '');
         $signature = (string) ($input['signature'] ?? '');
@@ -190,16 +195,23 @@ class PaylabsQrisService
             }
         }
 
+        $merchantTradeNo = Arr::get($payload, 'merchantTradeNo');
+        $transaction = \App\Models\Transaction::where('transaction_code', $merchantTradeNo)->first();
+        if ($transaction) {
+            $statusMap = ['02' => 'success', '03' => 'failed', '04' => 'expired'];
+            $newStatus = $statusMap[Arr::get($payload, 'status')] ?? 'pending';
+            $transaction->update([
+                'status' => $newStatus,
+                'paid_at' => $newStatus === 'success' ? now() : null,
+                'paylabs_response' => $payload,
+            ]);
+        }
+
         return [
             'verified' => $verified,
             'payment' => $payment,
             'payload' => $payload,
-            'response' => [
-                'merchantId' => $merchantId,
-                'requestId' => Arr::get($payload, 'requestId'),
-                'errCode' => '0',
-                'signatureVerified' => $verified,
-            ],
+            'response' => ['code' => 'SUCCESS'], // ✅ Format standar Paylabs
         ];
     }
 }

@@ -40,4 +40,9 @@ class Payment extends Model
         'notify_payload' => 'array',
         'paid_at' => 'datetime',
     ];
+
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class);
+    }
 }

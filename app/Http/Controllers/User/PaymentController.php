@@ -2,36 +2,86 @@
 
 namespace App\Http\Controllers\User;
 
-use Midtrans\Config;
-use Midtrans\Snap;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\EventTicket;
+use App\Models\Transaction;
+use App\Services\Paylabs\PaylabsQrisService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class PaymentController extends Controller
 {
+    /**
+     * Buat permintaan pembayaran ke Paylabs (QRIS)
+     */
     public function pay(Request $request)
     {
-        Config::$serverKey = config('midtrans.server_key');
-        Config::$isProduction = config('midtrans.is_production');
-        Config::$isSanitized = config('midtrans.is_sanitized');
-        Config::$is3ds = config('midtrans.is_3ds');
+        // Validasi input
+        $validated = $request->validate([
+            'ticket_id' => 'required|exists:event_tickets,id',
+            'quantity' => 'required|integer|min:1|max:10',
+        ]);
 
-        $params = [
-            'transaction_details' => [
-                'order_id' => 'ORDER-' . time(),
-                'gross_amount' => 50000,
-            ],
-            'customer_details' => [
-                'first_name' => Auth::user()?->name ?? 'Guest',
-                'email' => Auth::user()?->email ?? 'guest@mail.com',
-            ],
+        // Ambil tiket
+        $ticket = EventTicket::with('event')->findOrFail($validated['ticket_id']);
+
+        // Hitung total (pastikan harga integer dalam Rupiah)
+        $totalAmount = $ticket->price * $validated['quantity'];
+
+        if ($totalAmount <= 0) {
+            throw ValidationException::withMessages([
+                'ticket_id' => 'Harga tiket tidak valid.'
+            ]);
+        }
+
+        // Buat transaksi (kode otomatis di-generate oleh model)
+        $transaction = Transaction::create([
+            'user_id' => Auth::id(),
+            'event_id' => $ticket->event_id,
+            'ticket_id' => $ticket->id,
+            'quantity' => $validated['quantity'],
+            'total_amount' => $totalAmount,
+            'status' => 'pending',
+            'expired_at' => now()->addMinutes(10), // QRIS biasanya expired cepat
+        ]);
+
+        // Siapkan data untuk Paylabs
+        $payData = [
+            'amount' => $totalAmount,
+            'productName' => 'Tiket: ' . $ticket->name,
+            'merchantTradeNo' => $transaction->transaction_code, // TRX2601180001
+            'notifyUrl' => route('paylabs.notify'), // pastikan route ini ada
+            'requestId' => uniqid('req_', true),
         ];
 
-        $snapToken = Snap::getSnapToken($params);
+        // Panggil service Paylabs
+        $service = new PaylabsQrisService();
+        $result = $service->create($payData);
 
+        // Cek apakah berhasil
+        if (!isset($result['paylabs']['json']['data']['qrCode'])) {
+            // Jika gagal, update status jadi failed
+            $transaction->update(['status' => 'failed']);
+            return response()->json([
+                'message' => 'Gagal membuat pembayaran. Silakan coba lagi.',
+                'debug' => $result['paylabs']['json'] ?? null,
+            ], 500);
+        }
+
+        // Simpan response dari Paylabs (opsional, untuk debugging)
+        $transaction->update([
+            'paylabs_response' => $result['paylabs']['json'],
+        ]);
+
+        // Kembalikan QRIS ke frontend
         return response()->json([
-            'snap_token' => $snapToken
+            'success' => true,
+            'transaction_code' => $transaction->transaction_code,
+            'qr_code' => $result['paylabs']['json']['data']['qrCode'],
+            'amount' => $totalAmount,
+            'expires_at' => $transaction->expired_at,
+            'message' => 'Silakan scan QRIS untuk menyelesaikan pembayaran.',
         ]);
     }
 }

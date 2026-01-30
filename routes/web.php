@@ -31,7 +31,7 @@ use App\Http\Controllers\Admin\MasterTicketCategoryController;
 use App\Http\Controllers\MidtransCallbackController;
 use App\Http\Controllers\PaylabsCallbackController;
 
-Route::post('/midtrans/callback', [MidtransCallbackController::class, 'handle']);
+
 Route::post('/paylabs/callback', [PaylabsCallbackController::class, 'handle']);
 
 
