@@ -60,6 +60,8 @@ class PaylabsHttpClient
         $stringToSign = "POST:/payment/{$version}{$path}:{$hash}:{$timestamp}";
         $signature = PaylabsCrypto::sign($stringToSign, $privateKey);
 
+        $url = rtrim($baseUrl, '/') . "/payment/{$version}{$path}";
+
         $response = Http::timeout(30)
             ->withHeaders([
                 'Content-Type' => 'application/json;charset=utf-8',
@@ -68,7 +70,8 @@ class PaylabsHttpClient
                 'X-PARTNER-ID' => $merchantId,
                 'X-REQUEST-ID' => $headerRequestId,
             ])
-            ->post(rtrim($baseUrl, '/') . "/payment/{$version}{$path}", $payload);
+            ->withBody($bodyJson, 'application/json')
+            ->post($url);
 
         return [
             'ok' => $response->successful(),
