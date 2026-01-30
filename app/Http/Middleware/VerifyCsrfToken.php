@@ -8,5 +8,7 @@ class VerifyCsrfToken extends Middleware
 {
     protected $except = [
         'midtrans/callback',
+        'paylabs/callback',
+        'api/paylabs/qris/notify',
     ];
 }

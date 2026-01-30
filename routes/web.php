@@ -29,8 +29,10 @@ use App\Http\Controllers\Admin\MasterEventKindController;
 use App\Http\Controllers\Admin\MasterSocialMediaController;
 use App\Http\Controllers\Admin\MasterTicketCategoryController;
 use App\Http\Controllers\MidtransCallbackController;
+use App\Http\Controllers\PaylabsCallbackController;
 
 Route::post('/midtrans/callback', [MidtransCallbackController::class, 'handle']);
+Route::post('/paylabs/callback', [PaylabsCallbackController::class, 'handle']);
 
 
 // Landing Page Routes
@@ -64,8 +66,6 @@ Route::middleware(['guest'])->group(function () {
     Route::post('reset-password', [AuthController::class, 'reset'])->name('password.update');
 });
 
-// PayLabs Routes (Public Access)
-// Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
 Route::post('/pay', [PaymentController::class, 'pay'])->name('payment.checkout');
 
 // Authenticated User Routes
