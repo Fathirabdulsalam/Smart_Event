@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
-use App\Models\Registration;
+use App\Models\Transaction; 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -11,9 +11,14 @@ class UserTicketController extends Controller
 {
     public function index()
     {
-        // Ambil semua registrasi milik user, urutkan dari yang terbaru
-        $tickets = Registration::with(['event.category', 'event.author', 'transaction'])
+        $tickets = Transaction::with([
+                'event.category',
+                'event.author',
+                'event.location',
+                'ticket' 
+            ])
             ->where('user_id', Auth::id())
+            ->where('status', 'success') 
             ->latest()
             ->paginate(10);
 

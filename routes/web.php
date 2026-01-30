@@ -66,10 +66,18 @@ Route::middleware(['guest'])->group(function () {
     Route::post('reset-password', [AuthController::class, 'reset'])->name('password.update');
 });
 
-Route::post('/pay', [PaymentController::class, 'pay'])->name('payment.checkout');
+
+
 
 // Authenticated User Routes
 Route::middleware(['auth'])->group(function () {
+    Route::post('/pay', [PaymentController::class, 'pay'])->name('payment.checkout');
+
+    Route::get('/payment/qris/{transaction_code}', [PaymentController::class, 'showQris'])
+        ->name('payment.qris.show');
+
+    Route::get('/payment/check/{transaction_code}', [PaymentController::class, 'checkStatus'])
+        ->name('payment.check');
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
 
     // Profile

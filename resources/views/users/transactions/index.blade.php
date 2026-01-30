@@ -38,7 +38,6 @@
                                     <th class="py-4 px-4">Tanggal</th>
                                     <th class="py-4 px-4">Total</th>
                                     <th class="py-4 px-4">Status</th>
-                                    <th class="py-4 px-4 text-right rounded-tr-lg">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
@@ -47,14 +46,14 @@
                                         <!-- Invoice ID -->
                                         <td class="py-4 px-4">
                                             <span class="font-mono text-xs font-bold text-gray-600 bg-gray-200 px-2 py-1 rounded">
-                                                #{{ substr($trx->external_id, 0, 15) }}...
+                                                #{{ substr($trx->transaction_code, 0, 15) }}...
                                             </span>
                                         </td>
                                         
                                         <!-- Event Name -->
                                         <td class="py-4 px-4">
                                             <div class="font-bold text-gray-800 text-sm line-clamp-1 w-40">
-                                                {{ $trx->registration->event->name ?? 'Event Dihapus' }}
+                                                {{ $trx->event->name ?? 'Event Dihapus' }}
                                             </div>
                                             <div class="text-[10px] text-gray-400 mt-0.5">
                                                 {{ $trx->registration->event->category->name ?? '-' }}
@@ -72,17 +71,17 @@
 
                                         <!-- Amount -->
                                         <td class="py-4 px-4 text-sm font-bold text-gray-800">
-                                            Rp {{ number_format($trx->amount, 0, ',', '.') }}
+                                            Rp {{ number_format($trx->total_amount, 0, ',', '.') }}
                                         </td>
 
                                         <!-- Status (Terjemahan Visual) -->
                                         <td class="py-4 px-4">
                                             @php
-                                                $statusData = match($trx->payment_status) {
-                                                    'PAID' => ['class' => 'bg-green-100 text-green-700', 'label' => 'BERHASIL'],
-                                                    'PENDING' => ['class' => 'bg-yellow-100 text-yellow-700', 'label' => 'MENUNGGU'],
+                                                $statusData = match($trx->status) {
+                                                    'success' => ['class' => 'bg-green-100 text-green-700', 'label' => 'BERHASIL'],
+                                                    'pending' => ['class' => 'bg-yellow-100 text-yellow-700', 'label' => 'MENUNGGU'],
                                                     'EXPIRED' => ['class' => 'bg-gray-100 text-gray-500', 'label' => 'KADALUARSA'],
-                                                    'FAILED' => ['class' => 'bg-red-100 text-red-700', 'label' => 'GAGAL'],
+                                                    'failed' => ['class' => 'bg-red-100 text-red-700', 'label' => 'GAGAL'],
                                                     default => ['class' => 'bg-gray-100 text-gray-600', 'label' => $trx->payment_status]
                                                 };
                                             @endphp
@@ -91,22 +90,7 @@
                                             </span>
                                         </td>
 
-                                        <!-- Action -->
-                                        <td class="py-4 px-4 text-right">
-                                            @if($trx->payment_status == 'PENDING')
-                                                <!-- Jika Pending -->
-                                                <a href="{{ $trx->checkout_link }}" target="_blank" class="inline-block bg-[#FF6B00] hover:bg-[#e65a00] text-white text-xs font-bold py-1.5 px-3 rounded transition shadow-sm">
-                                                    Bayar
-                                                </a>
-                                            @elseif($trx->payment_status == 'PAID')
-                                                <!-- Jika Paid -->
-                                                <a href="{{ route('event.detail', $trx->registration->event->id) }}" class="inline-block bg-indigo-50 hover:bg-indigo-100 text-[#4838CC] text-xs font-bold py-1.5 px-3 rounded transition">
-                                                    E-Tiket
-                                                </a>
-                                            @else
-                                                <span class="text-xs text-gray-400">-</span>
-                                            @endif
-                                        </td>
+                            
                                     </tr>
                                 @empty
                                     <tr>
