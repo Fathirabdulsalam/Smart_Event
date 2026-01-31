@@ -184,10 +184,6 @@
                             <h3 class="text-xl font-bold mb-2">Punya Cerita Menarik?</h3>
                             <p class="text-indigo-100 text-sm mb-6">Bagikan pengalaman atau tips eventmu kepada ribuan pembaca.</p>
                             
-                            <!-- Cek Login untuk tombol -->
-                            <a href="{{ Auth::check() ? route('user.article.create') : route('login') }}" class="inline-block bg-white text-[#4838CC] px-6 py-2.5 rounded-full text-sm font-bold shadow-md hover:bg-gray-50 transition transform hover:-translate-y-0.5">
-                                Tulis Artikel
-                            </a>
                         </div>
                         <!-- Decor -->
                         <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full translate-x-1/2 -translate-y-1/2"></div>

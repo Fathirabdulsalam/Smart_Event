@@ -33,7 +33,7 @@ use App\Http\Controllers\PaylabsCallbackController;
 
 
 Route::post('/paylabs/callback', [PaylabsCallbackController::class, 'handle']);
-
+Route::get('/', function () {return redirect()->route('login');});
 
 // Landing Page Routes
 Route::get('/landingPage', [LandingPageController::class, 'index'])->name('landingPage');
